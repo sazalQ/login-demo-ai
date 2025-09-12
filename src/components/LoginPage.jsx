@@ -70,6 +70,7 @@ const LoginPage = () => {
     <div className="login-container">
       <div className="login-form">
         <h2>Login</h2>
+        <div className="welcome-label">Welcome Agilechain</div>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="email">Email:</label>
