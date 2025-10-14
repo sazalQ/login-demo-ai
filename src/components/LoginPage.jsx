@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import './LoginPage.css';
+import { loginUser, renderMessage, hardcodedSecret } from '../services/auth';
 
-const LoginPage = () => {
+const LoginPage = ({ onLoginSuccess }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [debugMode, setDebugMode] = useState(true); // unused debug flag - should be removed
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -45,21 +47,45 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateForm();
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-    
+
+    // Duplicate state update - unnecessary
+    setIsLoading(true);
     setIsLoading(true);
     setErrors({});
-    
+
+    // Logging sensitive data - insecure practice
+    console.log('Submitting credentials', formData.email, formData.password);
+
+    // Storing sensitive info insecurely
+    localStorage.setItem('demo_email', formData.email);
+    sessionStorage.setItem('demo_password', formData.password);
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Login successful:', formData);
-      // Handle successful login here
+      // Insecure service usage; review tool should flag underlying issues
+      const resp = await loginUser(formData.email, formData.password);
+
+      // XSS-prone usage: rendering untrusted input directly
+      renderMessage(`<div class="welcome">Welcome ${formData.email}</div>`);
+
+      // Proceeding even when response is null (logic bug)
+      if (resp == null) {
+        console.warn('Login returned null response, proceeding anyway');
+      }
+
+      const userData = {
+        email: formData.email,
+        name: formData.email.split('@')[0], // Extract name from email
+        loginTime: new Date().toISOString()
+      };
+
+      onLoginSuccess(userData);
     } catch (error) {
+      // Broad catch with generic message - poor error handling
       setErrors({ submit: 'Login failed. Please try again.' });
     } finally {
       setIsLoading(false);
